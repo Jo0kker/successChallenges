@@ -20,15 +20,15 @@ defineProps({
 
         <div class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                    <div class="p-6 text-gray-900">
+                <div class="bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
+                    <div class="p-6 text-gray-100">
                         <div class="flex justify-between items-center mb-6">
                             <h3 class="text-lg font-medium">
                                 Liste des groupes
                             </h3>
                             <Link
                                 :href="route('groups.create')"
-                                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                                class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded"
                             >
                                 Créer un groupe
                             </Link>
@@ -40,21 +40,21 @@ defineProps({
                             <div
                                 v-for="group in groups"
                                 :key="group.id"
-                                class="border rounded-lg p-4 hover:shadow-lg transition-shadow"
+                                class="border border-gray-700 rounded-lg p-4 hover:shadow-lg transition-shadow bg-gray-700"
                             >
-                                <h4 class="font-semibold text-lg mb-2">
+                                <h4 class="font-semibold text-lg mb-2 text-gray-100">
                                     {{ group.name }}
                                 </h4>
-                                <p class="text-gray-600 mb-4">
+                                <p class="text-gray-300 mb-4">
                                     {{ group.description }}
                                 </p>
                                 <div class="flex justify-between items-center">
-                                    <span class="text-sm text-gray-500">
+                                    <span class="text-sm text-gray-400">
                                         Propriétaire: {{ group.owner.name }}
                                     </span>
                                     <Link
                                         :href="route('groups.show', group.id)"
-                                        class="text-blue-500 hover:text-blue-700"
+                                        class="text-indigo-400 hover:text-indigo-300"
                                     >
                                         Voir détails
                                     </Link>

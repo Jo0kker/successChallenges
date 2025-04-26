@@ -145,6 +145,16 @@ const formatDate = (date) => {
         day: 'numeric'
     });
 };
+
+const deleteGroup = () => {
+    if (confirm('Êtes-vous sûr de vouloir supprimer ce groupe ? Cette action est irréversible.')) {
+        router.delete(route('groups.destroy', props.group.id), {
+            onSuccess: () => {
+                router.visit(route('groups.index'));
+            }
+        });
+    }
+};
 </script>
 
 <template>
@@ -164,6 +174,13 @@ const formatDate = (date) => {
                     >
                         Modifier le groupe
                     </Link>
+                    <button
+                        v-if="group.owner.id === $page.props.auth.user.id"
+                        @click="deleteGroup"
+                        class="inline-flex items-center px-4 py-2 text-xs font-semibold tracking-widest text-white uppercase transition duration-150 ease-in-out bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:bg-red-700 active:bg-red-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                    >
+                        Supprimer le groupe
+                    </button>
                     <Link
                         v-if="canManage"
                         :href="route('seasons.create', group.id)"
@@ -177,8 +194,8 @@ const formatDate = (date) => {
 
         <div class="py-12">
             <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
-                <div class="overflow-hidden bg-white shadow-sm dark:bg-gray-800 sm:rounded-lg">
-                    <div class="p-6 text-gray-900 dark:text-gray-100">
+                <div class="overflow-hidden bg-gray-800 shadow-sm dark:bg-gray-900 sm:rounded-lg">
+                    <div class="p-6 text-gray-100">
                         <div class="mb-6">
                             <div class="border-b border-gray-200 dark:border-gray-700">
                                 <nav class="flex -mb-px space-x-8">
@@ -213,8 +230,8 @@ const formatDate = (date) => {
                                 <div v-for="season in seasons" :key="season.id"
                                     class="p-4 rounded-lg"
                                     :class="{
-                                        'bg-indigo-50 dark:bg-indigo-900': season.status === 'active',
-                                        'bg-gray-50 dark:bg-gray-700': season.status !== 'active'
+                                        'bg-indigo-900/50 dark:bg-indigo-900/50': season.status === 'active',
+                                        'bg-gray-700 dark:bg-gray-700': season.status !== 'active'
                                     }"
                                 >
                                     <div class="flex items-center justify-between">
@@ -245,7 +262,7 @@ const formatDate = (date) => {
                                 </div>
                             </div>
                             <div v-else class="py-12 text-center">
-                                <p class="text-gray-500 dark:text-gray-400">Aucune saison n'a été créée pour ce groupe.</p>
+                                <p class="text-gray-400">Aucune saison n'a été créée pour ce groupe.</p>
                             </div>
                         </div>
 
@@ -296,9 +313,9 @@ const formatDate = (date) => {
                             </div>
 
                             <div class="space-y-4">
-                                <div v-for="member in members" :key="member.id" class="flex items-center justify-between p-4 rounded-lg bg-gray-50 dark:bg-gray-700">
+                                <div v-for="member in members" :key="member.id" class="flex items-center justify-between p-4 rounded-lg bg-gray-700">
                                     <div class="flex items-center">
-                                        <p class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ member.name }}</p>
+                                        <p class="text-sm font-medium text-gray-100">{{ member.name }}</p>
                                     </div>
                                     <div class="flex items-center space-x-4">
                                         <span class="px-2 py-1 text-xs font-semibold rounded-full"
