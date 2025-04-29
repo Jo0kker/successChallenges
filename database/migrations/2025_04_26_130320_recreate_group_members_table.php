@@ -11,12 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
+        Schema::dropIfExists('group_members');
+
         Schema::create('group_members', function (Blueprint $table) {
             $table->id();
             $table->foreignId('group_id')->constrained()->onDelete('cascade');
             $table->morphs('member');
-            $table->string('role')->default('member'); // member, moderator
+            $table->string('role')->default('member');
             $table->timestamps();
+
+            $table->unique(['group_id', 'member_id', 'member_type']);
         });
     }
 

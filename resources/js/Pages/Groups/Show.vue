@@ -37,6 +37,7 @@ watch(activeTab, (newTab) => {
 
 const memberForm = useForm({
     user_id: "",
+    user_type: "",
     role: "member",
 });
 
@@ -44,6 +45,7 @@ const searchQuery = ref("");
 const searchResults = ref([]);
 const isLoading = ref(false);
 const selectedUser = ref(null);
+const searchInputRef = ref(null);
 
 const searchUsers = debounce(async (query) => {
     if (query.length < 2) {
@@ -53,9 +55,11 @@ const searchUsers = debounce(async (query) => {
 
     isLoading.value = true;
     try {
+        console.log('Recherche pour:', query);
         const response = await axios.get(route("users.search"), {
             params: { query },
         });
+        console.log('Résultats:', response.data);
         searchResults.value = response.data;
     } catch (error) {
         console.error("Erreur lors de la recherche:", error);
@@ -70,28 +74,46 @@ watch(searchQuery, (newQuery) => {
 });
 
 const selectUser = (user) => {
+    console.log('Sélection:', user);
     selectedUser.value = user;
     memberForm.user_id = user.id;
+    memberForm.user_type = user.type;
     searchQuery.value = user.name;
     searchResults.value = [];
 };
 
 const addMember = () => {
-    if (!selectedUser.value) return;
+    if (!selectedUser.value && !searchQuery.value) {
+        return;
+    }
 
-    const form = useForm({
-        user_id: selectedUser.value.id,
-        role: memberForm.role
-    });
+    const formData = {
+        user_id: selectedUser.value?.id || null,
+        user_type: memberForm.user_type || (selectedUser.value ? 'user' : 'guest'),
+        role: memberForm.role,
+    };
+
+    // Ajouter le champ name uniquement pour les invités
+    if (formData.user_type === 'guest') {
+        formData.name = searchQuery.value;
+    }
+
+    console.log('Données du formulaire:', formData);
+
+    const form = useForm(formData);
 
     form.post(route("groups.members.add", props.group.id), {
         preserveScroll: true,
         onSuccess: () => {
+            console.log('Membre ajouté avec succès');
             memberForm.reset();
             searchQuery.value = "";
             selectedUser.value = null;
             searchResults.value = [];
         },
+        onError: (errors) => {
+            console.error('Erreur lors de l\'ajout du membre:', errors);
+        }
     });
 };
 
@@ -194,7 +216,7 @@ const deleteGroup = () => {
 
         <div class="py-12">
             <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
-                <div class="overflow-hidden bg-gray-800 shadow-sm dark:bg-gray-900 sm:rounded-lg">
+                <div class="overflow-visible bg-gray-800 shadow-sm dark:bg-gray-900 sm:rounded-lg">
                     <div class="p-6 text-gray-100">
                         <div class="mb-6">
                             <div class="border-b border-gray-200 dark:border-gray-700">
@@ -269,24 +291,28 @@ const deleteGroup = () => {
                         <div v-else-if="activeTab === 'members'">
                             <div v-if="canManageMembers || group.members.find(m => m.id === $page.props.auth.user.id && m.pivot.role === 'moderator')" class="mb-6">
                                 <div class="flex items-center space-x-4">
-                                    <div class="flex-1 relative">
+                                    <div class="relative flex-1" style="position: relative; z-index: 50;">
                                         <input
                                             type="text"
                                             v-model="searchQuery"
                                             class="w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
                                             placeholder="Rechercher un utilisateur..."
                                         />
-                                        <div v-if="searchResults.length > 0" class="absolute z-10 w-full mt-1 bg-white rounded-md shadow-lg dark:bg-gray-800">
+                                        <div v-if="searchResults.length > 0 && searchQuery.length >= 2"
+                                            class="absolute z-[9999] w-full mt-1 bg-white rounded-md shadow-lg dark:bg-gray-800"
+                                            style="position: absolute; top: 100%; left: 0; right: 0;"
+                                        >
                                             <ul class="py-1 overflow-auto text-base leading-6 rounded-md shadow-xs max-h-60 focus:outline-none sm:text-sm sm:leading-5">
                                                 <li
                                                     v-for="user in searchResults"
-                                                    :key="user.id"
+                                                    :key="user.id || user.name"
                                                     @click="selectUser(user)"
-                                                    class="relative py-2 pl-3 cursor-pointer select-none pr-9 hover:bg-indigo-600 hover:text-white"
+                                                    class="relative py-2 pl-3 cursor-pointer select-none pr-9 hover:bg-indigo-600 hover:text-white dark:text-gray-100"
                                                 >
                                                     <div class="flex items-center">
                                                         <span class="block ml-3 font-normal truncate">
                                                             {{ user.name }}
+                                                            <span v-if="user.type === 'guest'" class="text-xs text-gray-500">(invité)</span>
                                                         </span>
                                                     </div>
                                                 </li>
@@ -303,17 +329,17 @@ const deleteGroup = () => {
                                         </select>
                                     </div>
                                     <button
-                                        @click="addMember"
-                                        :disabled="!selectedUser"
+                                        @click.prevent="addMember"
+                                        :disabled="!searchQuery && !selectedUser"
                                         class="inline-flex items-center px-4 py-2 text-xs font-semibold tracking-widest text-white uppercase transition duration-150 ease-in-out bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50"
                                     >
-                                        Ajouter
+                                        {{ selectedUser ? 'Ajouter l\'utilisateur' : 'Ajouter l\'invité' }}
                                     </button>
                                 </div>
                             </div>
 
                             <div class="space-y-4">
-                                <div v-for="member in members" :key="member.id" class="flex items-center justify-between p-4 rounded-lg bg-gray-700">
+                                <div v-for="member in members" :key="member.id" class="flex items-center justify-between p-4 bg-gray-700 rounded-lg">
                                     <div class="flex items-center">
                                         <p class="text-sm font-medium text-gray-100">{{ member.name }}</p>
                                     </div>

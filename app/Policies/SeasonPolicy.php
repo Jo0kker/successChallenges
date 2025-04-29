@@ -17,7 +17,7 @@ class SeasonPolicy
      */
     public function view(User $user, Season $season, Group $group): bool
     {
-        return $group->isMember($user);
+        return $group->isMember($user) || $group->isAdmin($user) || $group->isOwner($user);
     }
 
     /**

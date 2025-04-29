@@ -8,7 +8,9 @@ use Inertia\Inertia;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 use App\Models\User;
+use App\Models\GuestParticipant;
 
 class GroupController extends Controller
 {
@@ -21,7 +23,8 @@ class GroupController extends Controller
     {
         $groups = Group::with(['owner', 'members'])
             ->whereHas('members', function ($query) {
-                $query->where('user_id', Auth::id());
+                $query->where('member_id', Auth::id())
+                    ->where('member_type', User::class);
             })
             ->get();
 
@@ -69,7 +72,7 @@ class GroupController extends Controller
         $tab = request()->query('tab', 'seasons');
 
         $data = [
-            'group' => $group->load(['owner', 'members']),
+            'group' => $group->load(['owner', 'members', 'guestMembers']),
             'activeTab' => $tab,
             'canManage' => $group->canManage(Auth::user()),
             'canManageMembers' => $group->canManageMembers(Auth::user()),
@@ -82,15 +85,29 @@ class GroupController extends Controller
                 }])
                 ->get();
         } else {
-            $data['members'] = $group->members()
+            $members = $group->members()
                 ->get()
                 ->map(function ($member) {
                     return [
                         'id' => $member->id,
                         'name' => $member->name,
+                        'type' => 'user',
                         'role' => $member->pivot->role ?: 'member'
                     ];
                 });
+
+            $guestMembers = $group->guestMembers()
+                ->get()
+                ->map(function ($member) {
+                    return [
+                        'id' => $member->id,
+                        'name' => $member->name,
+                        'type' => 'guest',
+                        'role' => $member->pivot->role ?: 'member'
+                    ];
+                });
+
+            $data['members'] = $members->concat($guestMembers);
         }
 
         return Inertia::render('Groups/Show', $data);
@@ -149,19 +166,32 @@ class GroupController extends Controller
 
         \Log::info('Ajout de membre', [
             'group_id' => $group->id,
-            'user_id' => $request->user_id,
-            'role' => $request->role
+            'request' => $request->all()
         ]);
 
         $request->validate([
-            'user_id' => 'required|exists:users,id',
+            'user_id' => 'nullable',
+            'user_type' => 'required|in:user,guest',
             'role' => 'required|in:moderator,member',
+            'name' => 'required_if:user_type,guest|string|max:255',
         ]);
 
         try {
-            $group->members()->attach($request->user_id, [
-                'role' => $request->role,
-            ]);
+            if ($request->user_type === 'guest') {
+                // Créer un invité
+                $guest = GuestParticipant::create([
+                    'name' => $request->name,
+                ]);
+
+                $group->guestMembers()->attach($guest->id, [
+                    'role' => $request->role
+                ]);
+            } else {
+                // Ajouter un utilisateur existant
+                $group->members()->attach($request->user_id, [
+                    'role' => $request->role
+                ]);
+            }
 
             \Log::info('Membre ajouté avec succès');
             return redirect()->back()->with('success', 'Membre ajouté avec succès');

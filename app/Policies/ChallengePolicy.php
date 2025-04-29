@@ -39,7 +39,7 @@ class ChallengePolicy
     /**
      * Determine whether the user can delete the challenge.
      */
-    public function delete(User $user, Challenge $challenge, Group $group)
+    public function delete(User $user, Challenge $challenge, Season $season, Group $group): bool
     {
         return $group->isModerator($user) || $group->isAdmin($user) || $group->isOwner($user);
     }

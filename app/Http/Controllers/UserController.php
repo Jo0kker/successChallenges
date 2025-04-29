@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
 {
@@ -16,11 +17,29 @@ class UserController extends Controller
             return response()->json([]);
         }
 
-        $users = User::where('name', 'like', "%{$query}%")
+        // Recherche d'utilisateurs
+        $users = User::where(function ($q) use ($query) {
+            $q->where('name', 'like', "%{$query}%")
+                ->orWhere('email', 'like', "%{$query}%");
+        })
             ->where('id', '!=', Auth::id())
-            ->select('id', 'name')
+            ->select('id', 'name', 'email')
             ->limit(5)
-            ->get();
+            ->get()
+            ->map(function ($user) {
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'type' => 'user'
+                ];
+            });
+
+        // Ajouter l'option d'invité aux résultats
+        $users->push([
+            'id' => null,
+            'name' => $query,
+            'type' => 'guest'
+        ]);
 
         return response()->json($users);
     }

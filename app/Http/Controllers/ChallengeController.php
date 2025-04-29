@@ -5,11 +5,15 @@ namespace App\Http\Controllers;
 use App\Models\Group;
 use App\Models\Season;
 use App\Models\Challenge;
+use App\Models\GuestParticipant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use App\Models\User;
+use Illuminate\Support\Facades\Gate;
+use App\Http\Requests\StoreChallengeRequest;
 
 class ChallengeController extends Controller
 {
@@ -22,10 +26,38 @@ class ChallengeController extends Controller
     {
         $this->authorize('view', [$challenge, $season, $group]);
 
+        $challenge->load(['participants', 'guestParticipants', 'failedBy']);
+
+        $formattedChallenge = [
+            'id' => $challenge->id,
+            'name' => $challenge->name,
+            'bet_amount' => $challenge->bet_amount,
+            'failed_by' => $challenge->failedBy ? [
+                'id' => $challenge->failedBy->id,
+                'name' => $challenge->failedBy->name,
+                'type' => class_basename($challenge->failedBy)
+            ] : null,
+            'participants' => $challenge->participants->map(function ($participant) {
+                return [
+                    'id' => $participant->id,
+                    'name' => $participant->name,
+                    'type' => 'user'
+                ];
+            }),
+            'guest_participants' => $challenge->guestParticipants->map(function ($participant) {
+                return [
+                    'id' => $participant->id,
+                    'name' => $participant->name,
+                    'type' => 'guest'
+                ];
+            })
+        ];
+
         return Inertia::render('Challenges/Show', [
             'group' => $group->load('owner'),
             'season' => $season,
-            'challenge' => $challenge->load(['participants', 'failedBy']),
+            'challenge' => $formattedChallenge,
+            'canManage' => Gate::allows('manage', [$season, $group])
         ]);
     }
 
@@ -34,70 +66,83 @@ class ChallengeController extends Controller
      */
     public function create(Group $group, Season $season)
     {
-        $this->authorize('create', [Challenge::class, $season, $group]);
+        $this->authorize('view', [$season, $group]);
 
-        $successList = [
-            'Dofus Émeraude',
-            'Dofus Pourpre',
-            'Dofus Turquoise',
-            'Dofus Ivoire',
-            'Dofus Cawotte',
-            'Dofus Ebène',
-            'Dofus Ocre',
-            'Dofus Incarnam',
-            'Dofus Vulbis',
-            'Dofus Ochre',
-            'Dofus Abyssal',
-            'Dofus Cobalt',
-            'Dofus Argenté',
-            'Dofus Doré',
-            'Dofus Saphir',
-            'Dofus Rubis',
-            'Dofus Améthyste',
-            'Dofus Topaze',
-            'Dofus Perle',
-            'Dofus Opale',
-            'Dofus Jade',
-            'Dofus Obsidienne',
-            'Dofus Cristal',
-            'Dofus Diamant',
-        ];
+        // Récupérer les membres utilisateurs
+        $userMembers = $group->members()->get()->map(function ($member) {
+            return [
+                'id' => $member->id,
+                'name' => $member->name,
+                'type' => 'user',
+                'role' => $member->pivot->role
+            ];
+        });
+
+        // Récupérer les membres invités
+        $guestMembers = $group->guestMembers()->get()->map(function ($member) {
+            return [
+                'id' => $member->id,
+                'name' => $member->name,
+                'type' => 'guest',
+                'role' => $member->pivot->role
+            ];
+        });
+
+        // Fusionner les deux collections
+        $allMembers = $userMembers->concat($guestMembers);
 
         return Inertia::render('Challenges/Create', [
-            'group' => $group,
+            'group' => $group->load('owner'),
             'season' => $season,
-            'groupMembers' => $group->members()->get(),
-            'successList' => $successList,
+            'groupMembers' => $allMembers,
+            'successList' => [
+                'Dofus Émeraude',
+                'Dofus Pourpre',
+                'Dofus Turquoise',
+                'Dofus Ivoire',
+                'Dofus Cawotte',
+                'Dofus Ebène',
+                'Dofus Ocre',
+                'Dofus Incarnam',
+                'Dofus Vulbis',
+            ],
         ]);
     }
 
     /**
      * Store a newly created challenge in storage.
      */
-    public function store(Request $request, Group $group, Season $season)
+    public function store(StoreChallengeRequest $request, Group $group, Season $season)
     {
-        $this->authorize('create', [Challenge::class, $season, $group]);
+        $this->authorize('view', [$season, $group]);
 
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'bet_amount' => 'required|numeric|min:0',
-            'failed_by' => 'required|exists:users,id',
-            'participants' => 'required|array|min:1',
-            'participants.*' => 'exists:users,id',
-        ]);
+        $validated = $request->validated();
 
+        // Créer le défi avec les champs failed_by
         $challenge = $season->challenges()->create([
-            'season_id' => $season->id,
             'name' => $validated['name'],
             'bet_amount' => $validated['bet_amount'],
-            'failed_by' => $validated['failed_by'],
+            'failed_by_type' => $validated['failed_by']['type'] === 'user' ? User::class : GuestParticipant::class,
+            'failed_by_id' => $validated['failed_by']['id']
         ]);
 
-        // Ajouter les participants
-        $challenge->participants()->attach($validated['participants']);
+        // Attacher les participants
+        foreach ($validated['participants'] as $participant) {
+            if ($participant['type'] === 'user') {
+                $challenge->participants()->attach($participant['id'], [
+                    'participant_type' => User::class,
+                    'participant_id' => $participant['id']
+                ]);
+            } else {
+                $challenge->guestParticipants()->attach($participant['id'], [
+                    'participant_type' => GuestParticipant::class,
+                    'participant_id' => $participant['id']
+                ]);
+            }
+        }
 
         return redirect()->route('seasons.show', [$group, $season])
-            ->with('success', 'Défi créé avec succès !');
+            ->with('success', 'Le défi a été créé avec succès.');
     }
 
     public function markAsFailed(Request $request, Group $group, Season $season, Challenge $challenge)
@@ -105,10 +150,17 @@ class ChallengeController extends Controller
         $this->authorize('update', [$challenge, $season, $group]);
 
         $validated = $request->validate([
-            'failed_by' => 'required|exists:users,id',
+            'failed_by_type' => 'required|in:user,guest',
+            'failed_by_id' => 'required',
         ]);
 
-        $challenge->markAsFailed(User::find($validated['failed_by']));
+        if ($validated['failed_by_type'] === 'user') {
+            $user = User::findOrFail($validated['failed_by_id']);
+            $challenge->markAsFailedByUser($user);
+        } else {
+            $guest = GuestParticipant::findOrFail($validated['failed_by_id']);
+            $challenge->markAsFailedByGuest($guest);
+        }
 
         return redirect()->back()->with('success', 'Le défi a été marqué comme échoué.');
     }
@@ -117,40 +169,148 @@ class ChallengeController extends Controller
     {
         $this->authorize('view', [$season, $group]);
 
-        $query = $season->challenges()
-            ->with(['participants' => function ($query) {
-                $query->select('users.id', 'users.name');
-            }, 'failedBy']);
+        // Charger les relations nécessaires pour le groupe
+        $group->load(['members', 'guestMembers']);
 
-        $member = null;
-        if ($request->has('member')) {
-            $member = User::find($request->member);
-            if ($member) {
-                $query->where(function ($query) use ($member) {
-                    // Défis où l'utilisateur est participant
-                    $query->whereHas('participants', function ($query) use ($member) {
-                        $query->where('users.id', $member->id);
+        $challenges = $season->challenges()
+            ->with([
+                'participants' => function ($query) {
+                    $query->select('users.id as user_id', 'users.name as user_name');
+                },
+                'guestParticipants' => function ($query) {
+                    $query->select('guest_participants.id as guest_id', 'guest_participants.name as guest_name');
+                },
+                'failedBy'
+            ])
+            ->get()
+            ->map(function ($challenge) {
+                return [
+                    'id' => $challenge->id,
+                    'name' => $challenge->name,
+                    'bet_amount' => $challenge->bet_amount,
+                    'failed_by' => $challenge->failedBy ? [
+                        'id' => $challenge->failedBy->id,
+                        'name' => $challenge->failedBy->name,
+                        'type' => class_basename($challenge->failedBy)
+                    ] : null,
+                    'participants' => $challenge->participants->map(function ($participant) {
+                        return [
+                            'id' => $participant->user_id,
+                            'name' => $participant->user_name,
+                            'type' => 'user'
+                        ];
+                    }),
+                    'guest_participants' => $challenge->guestParticipants->map(function ($participant) {
+                        return [
+                            'id' => $participant->guest_id,
+                            'name' => $participant->guest_name,
+                            'type' => 'guest'
+                        ];
                     })
-                        // OU défis où l'utilisateur a échoué
-                        ->orWhere('failed_by', $member->id);
+                ];
+            });
+
+        // Initialiser le classement avec tous les membres
+        $ranking = [];
+
+        // Ajouter les membres utilisateurs
+        foreach ($group->members as $member) {
+            $ranking[] = [
+                'id' => $member->id,
+                'name' => $member->name,
+                'type' => 'user',
+                'points' => 0,
+                'participated_challenges' => 0,
+                'failed_challenges' => 0
+            ];
+        }
+
+        // Ajouter les membres invités
+        foreach ($group->guestMembers as $member) {
+            $ranking[] = [
+                'id' => $member->id,
+                'name' => $member->name,
+                'type' => 'guest',
+                'points' => 0,
+                'participated_challenges' => 0,
+                'failed_challenges' => 0
+            ];
+        }
+
+        // Calculer les points pour chaque défi
+        foreach ($challenges as $challenge) {
+            $betAmount = $challenge['bet_amount'];
+            $totalParticipants = count($challenge['participants']) + count($challenge['guest_participants']);
+
+            // Points pour les participants
+            foreach ($challenge['participants'] as $participant) {
+                $memberIndex = array_search($participant['id'], array_column($ranking, 'id'));
+                if ($memberIndex !== false) {
+                    $ranking[$memberIndex]['points'] += $betAmount;
+                    $ranking[$memberIndex]['participated_challenges']++;
+                }
+            }
+
+            foreach ($challenge['guest_participants'] as $participant) {
+                $memberIndex = array_search($participant['id'], array_column($ranking, 'id'));
+                if ($memberIndex !== false) {
+                    $ranking[$memberIndex]['points'] += $betAmount;
+                    $ranking[$memberIndex]['participated_challenges']++;
+                }
+            }
+
+            // Points négatifs pour celui qui a échoué
+            if ($challenge['failed_by']) {
+                $failedMemberIndex = array_search($challenge['failed_by']['id'], array_column($ranking, 'id'));
+                if ($failedMemberIndex !== false) {
+                    $penalty = $totalParticipants > 0 ? $betAmount * $totalParticipants : $betAmount;
+                    $ranking[$failedMemberIndex]['points'] -= $penalty;
+                    $ranking[$failedMemberIndex]['failed_challenges']++;
+                }
+            }
+        }
+
+        // Trier le classement par points
+        usort($ranking, function ($a, $b) {
+            return $b['points'] <=> $a['points'];
+        });
+
+        // Filtrer les défis si un membre est spécifié
+        if ($request->has('member')) {
+            $memberId = $request->member;
+            $memberType = $request->member_type ?? 'user';
+
+            if ($memberType === 'user') {
+                $member = User::find($memberId);
+            } else {
+                $member = GuestParticipant::find($memberId);
+            }
+
+            if ($member) {
+                $challenges = $challenges->filter(function ($challenge) use ($member) {
+                    return in_array($member->id, array_column($challenge['participants'], 'id')) ||
+                        in_array($member->id, array_column($challenge['guest_participants'], 'id')) ||
+                        ($challenge['failed_by'] && $challenge['failed_by']['id'] == $member->id);
                 });
             }
         }
 
-        $challenges = $query->get();
+        $user = Auth::user();
+        $canManage = $group->canManage($user);
 
         return Inertia::render('Challenges/Index', [
-            'group' => $group->load('owner'),
+            'group' => $group,
             'season' => $season,
             'challenges' => $challenges,
-            'member' => $member,
-            'canManage' => auth()->user()->can('manage', [$season, $group])
+            'member' => $member ?? null,
+            'ranking' => $ranking,
+            'canManage' => $canManage
         ]);
     }
 
     public function destroy(Group $group, Season $season, Challenge $challenge)
     {
-        $this->authorize('delete', [$challenge, $group]);
+        $this->authorize('delete', [$challenge, $season, $group]);
 
         try {
             $challenge->delete();

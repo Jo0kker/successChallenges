@@ -1,6 +1,6 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, usePage } from '@inertiajs/vue3';
 
 const props = defineProps({
     groups: {
@@ -8,6 +8,23 @@ const props = defineProps({
         required: true
     }
 });
+
+const isOwner = (group) => {
+    return group.owner_id === usePage().props.auth.user.id;
+};
+
+const isModerator = (group) => {
+    return group.pivot?.role === 'moderator';
+};
+
+const isMember = (group) => {
+    return group.pivot?.role === 'member';
+};
+
+const getRole = (group) => {
+    if (isOwner(group)) return 'owner';
+    return group.pivot?.role || 'member';
+};
 </script>
 
 <template>
@@ -46,11 +63,11 @@ const props = defineProps({
                                             {{ group.name }}
                                         </h4>
                                         <span class="px-2 py-1 text-xs font-semibold rounded-full" :class="{
-                                            'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200': group.pivot.role === 'owner',
-                                            'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200': group.pivot.role === 'moderator',
-                                            'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200': group.pivot.role === 'member'
+                                            'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200': isOwner(group),
+                                            'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200': isModerator(group),
+                                            'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200': isMember(group)
                                         }">
-                                            {{ group.pivot.role }}
+                                            {{ getRole(group) }}
                                         </span>
                                     </div>
 

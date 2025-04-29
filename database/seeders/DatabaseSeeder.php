@@ -17,13 +17,10 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // Création de l'utilisateur test
-        User::factory()->create([
+        $testUser = User::factory()->create([
             'name' => 'Test User',
             'email' => 'test@example.com',
         ]);
-
-        // Création de 5 utilisateurs supplémentaires
-        User::factory(5)->create();
 
         // Création de 3 groupes
         Group::factory(3)->create();
@@ -41,5 +38,21 @@ class DatabaseSeeder extends Seeder
                 'season_id' => $season->id
             ]);
         });
+
+        // Création d'invités et ajout aux groupes
+        $groups = Group::all();
+        foreach ($groups as $group) {
+            // Créer 3 invités par groupe
+            for ($i = 1; $i <= 3; $i++) {
+                $guest = \App\Models\GuestParticipant::create([
+                    'name' => "Invité {$i} de {$group->name}"
+                ]);
+
+                // Ajouter l'invité au groupe avec un rôle
+                $group->guestMembers()->attach($guest->id, [
+                    'role' => $i === 1 ? 'admin' : 'member'
+                ]);
+            }
+        }
     }
 }

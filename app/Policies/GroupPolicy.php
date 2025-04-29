@@ -33,7 +33,8 @@ class GroupPolicy
     {
         return $group->owner_id === $user->id ||
             $group->members()
-            ->where('user_id', $user->id)
+            ->where('member_id', $user->id)
+            ->where('member_type', User::class)
             ->where('role', 'moderator')
             ->exists();
     }
@@ -43,6 +44,26 @@ class GroupPolicy
      */
     public function view(User $user, Group $group): bool
     {
-        return $group->isMember($user);
+        $membersQuery = $group->members()
+            ->wherePivot('member_id', $user->id)
+            ->wherePivot('member_type', User::class);
+
+        \Log::info('Vérification de l\'accès au groupe', [
+            'user_id' => $user->id,
+            'group_id' => $group->id,
+            'is_owner' => $group->owner_id === $user->id,
+            'members' => $group->members()->get()->toArray(),
+            'member_exists' => $membersQuery->exists(),
+            'sql_query' => $membersQuery->toSql(),
+            'bindings' => $membersQuery->getBindings()
+        ]);
+
+        // L'utilisateur peut voir le groupe s'il est le propriétaire
+        if ($group->owner_id === $user->id) {
+            return true;
+        }
+
+        // Ou s'il est membre du groupe
+        return $membersQuery->exists();
     }
 }

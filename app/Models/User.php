@@ -5,6 +5,8 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Models\Group;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
@@ -68,8 +70,36 @@ class User extends Authenticatable
 
     public function groups()
     {
-        return $this->belongsToMany(Group::class, 'group_members')
+        return $this->morphedByMany(Group::class, 'member', 'group_members', 'member_id', 'group_id')
             ->withPivot('role')
             ->withTimestamps();
+    }
+
+    /**
+     * Get the groups owned by this user.
+     */
+    public function ownedGroups()
+    {
+        return $this->hasMany(Group::class, 'owner_id');
+    }
+
+    /**
+     * Get the challenges where this user failed.
+     */
+    public function failedChallenges(): MorphMany
+    {
+        return $this->morphMany(Challenge::class, 'failed_by');
+    }
+
+    /**
+     * Get the challenges where this user is a participant.
+     */
+    public function participatedChallenges(): MorphToMany
+    {
+        return $this->morphedByMany(
+            Challenge::class,
+            'participant',
+            'challenge_participants'
+        )->withTimestamps();
     }
 }
