@@ -117,9 +117,9 @@ const addMember = () => {
     });
 };
 
-const removeMember = (userId) => {
+const removeMember = (userId, type) => {
     if (confirm("Êtes-vous sûr de vouloir retirer ce membre ?")) {
-        useForm({ user_id: userId }).delete(
+        useForm({ user_id: userId, user_type: type }).delete(
             route("groups.members.remove", props.group.id)
         );
     }
@@ -356,6 +356,7 @@ const deleteGroup = () => {
                                         <div v-if="canManageMembers && member.role !== 'owner'" class="flex items-center space-x-4">
                                             <select
                                                 :value="member.role || 'member'"
+                                                v-if="member.type === 'user'"
                                                 @change="updateMemberRole(member.id, $event.target.value)"
                                                 class="text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
                                             >
@@ -363,7 +364,7 @@ const deleteGroup = () => {
                                                 <option value="moderator">Modérateur</option>
                                             </select>
                                             <button
-                                                @click="removeMember(member.id)"
+                                                @click="removeMember(member.id, member.type)"
                                                 class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
                                             >
                                                 Retirer

@@ -26,13 +26,15 @@ class Group extends Model
     public function members(): MorphToMany
     {
         return $this->morphedByMany(User::class, 'member', 'group_members')
+            ->wherePivot('member_type', User::class)
             ->withPivot('role')
             ->withTimestamps();
     }
 
     public function guestMembers(): MorphToMany
     {
-        return $this->morphToMany(GuestParticipant::class, 'member', 'group_members', 'group_id', 'member_id')
+        return $this->morphedByMany(GuestParticipant::class, 'member', 'group_members')
+            ->wherePivot('member_type', GuestParticipant::class)
             ->withPivot('role')
             ->withTimestamps();
     }
@@ -90,33 +92,15 @@ class Group extends Model
 
     public function allMembers()
     {
-        $members = collect();
+        $members = $this->members()
+            ->withPivot('role')
+            ->get();
 
-        // Ajouter les utilisateurs
-        $members = $members->concat($this->members()->get()->map(function ($member) {
-            return [
-                'id' => $member->id,
-                'name' => $member->name,
-                'type' => 'user',
-                'points' => 0,
-                'failed_challenges' => 0,
-                'participated_challenges' => 0
-            ];
-        }));
+        $guests = $this->guestMembers()
+            ->withPivot('role')
+            ->get();
 
-        // Ajouter les invités
-        $members = $members->concat($this->guestMembers()->get()->map(function ($member) {
-            return [
-                'id' => $member->id,
-                'name' => $member->name,
-                'type' => 'guest',
-                'points' => 0,
-                'failed_challenges' => 0,
-                'participated_challenges' => 0
-            ];
-        }));
-
-        return $members;
+        return $members->concat($guests);
     }
 
     public function calculateRanking()

@@ -2,15 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Group;
-use Inertia\Inertia;
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Log;
 use App\Models\User;
 use App\Models\GuestParticipant;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
+use Inertia\Inertia;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class GroupController extends Controller
 {
@@ -71,8 +71,19 @@ class GroupController extends Controller
 
         $tab = request()->query('tab', 'seasons');
 
+        // Charger les relations nécessaires avec les pivots
+        $group->load([
+            'owner',
+            'members' => function ($query) {
+                $query->withPivot('role');
+            },
+            'guestMembers' => function ($query) {
+                $query->withPivot('role');
+            }
+        ]);
+
         $data = [
-            'group' => $group->load(['owner', 'members', 'guestMembers']),
+            'group' => $group,
             'activeTab' => $tab,
             'canManage' => $group->canManage(Auth::user()),
             'canManageMembers' => $group->canManageMembers(Auth::user()),
@@ -85,6 +96,7 @@ class GroupController extends Controller
                 }])
                 ->get();
         } else {
+            // Charger les membres et les invités séparément
             $members = $group->members()
                 ->get()
                 ->map(function ($member) {
@@ -96,7 +108,7 @@ class GroupController extends Controller
                     ];
                 });
 
-            $guestMembers = $group->guestMembers()
+            $guests = $group->guestMembers()
                 ->get()
                 ->map(function ($member) {
                     return [
@@ -107,7 +119,7 @@ class GroupController extends Controller
                     ];
                 });
 
-            $data['members'] = $members->concat($guestMembers);
+            $data['members'] = $members->concat($guests);
         }
 
         return Inertia::render('Groups/Show', $data);
@@ -164,7 +176,7 @@ class GroupController extends Controller
     {
         $this->authorize('manageMembers', $group);
 
-        \Log::info('Ajout de membre', [
+        Log::info('Ajout de membre', [
             'group_id' => $group->id,
             'request' => $request->all()
         ]);
@@ -184,19 +196,23 @@ class GroupController extends Controller
                 ]);
 
                 $group->guestMembers()->attach($guest->id, [
-                    'role' => $request->role
+                    'role' => 'member',
+                    'member_type' => GuestParticipant::class,
+                    'member_id' => $guest->id
                 ]);
             } else {
                 // Ajouter un utilisateur existant
                 $group->members()->attach($request->user_id, [
-                    'role' => $request->role
+                    'role' => $request->role,
+                    'member_type' => User::class,
+                    'member_id' => $request->user_id
                 ]);
             }
 
-            \Log::info('Membre ajouté avec succès');
+            Log::info('Membre ajouté avec succès');
             return redirect()->back()->with('success', 'Membre ajouté avec succès');
         } catch (\Exception $e) {
-            \Log::error('Erreur lors de l\'ajout du membre', [
+            Log::error('Erreur lors de l\'ajout du membre', [
                 'error' => $e->getMessage()
             ]);
             return redirect()->back()->with('error', 'Erreur lors de l\'ajout du membre');
@@ -211,12 +227,27 @@ class GroupController extends Controller
         $this->authorize('manageMembers', $group);
 
         $request->validate([
-            'user_id' => 'required|exists:users,id',
+            'user_id' => 'required',
+            'user_type' => 'required|in:user,guest',
         ]);
 
-        $group->members()->detach($request->user_id);
+        try {
+            if ($request->user_type === 'guest') {
+                $group->guestMembers()->detach($request->user_id);
+            } else {
+                $group->members()->detach($request->user_id);
+            }
 
-        return redirect()->back();
+            return redirect()->back()->with('success', 'Membre retiré avec succès');
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de la suppression du membre', [
+                'error' => $e->getMessage(),
+                'group_id' => $group->id,
+                'user_id' => $request->user_id,
+                'user_type' => $request->user_type
+            ]);
+            return redirect()->back()->with('error', 'Erreur lors de la suppression du membre');
+        }
     }
 
     public function updateMemberRole(Request $request, Group $group, User $user)
