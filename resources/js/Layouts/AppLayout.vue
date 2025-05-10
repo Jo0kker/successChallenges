@@ -47,12 +47,15 @@ const logout = () => {
                             </div>
 
                             <!-- Navigation Links -->
-                            <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                            <div class="hidden space-x-8 sm:-my-px sm:ml-10 sm:flex">
                                 <NavLink :href="route('dashboard')" :active="route().current('dashboard')">
-                                    Dashboard
+                                    Tableau de bord
                                 </NavLink>
                                 <NavLink :href="route('groups.index')" :active="route().current('groups.*')">
-                                    Groupes
+                                    Mes groupes
+                                </NavLink>
+                                <NavLink :href="route('feedback.create')" :active="route().current('feedback.*')">
+                                    Feedback
                                 </NavLink>
                             </div>
                         </div>
@@ -191,10 +194,13 @@ const logout = () => {
                 <div :class="{'block': showingNavigationDropdown, 'hidden': ! showingNavigationDropdown}" class="sm:hidden">
                     <div class="pt-2 pb-3 space-y-1">
                         <ResponsiveNavLink :href="route('dashboard')" :active="route().current('dashboard')">
-                            Dashboard
+                            Tableau de bord
                         </ResponsiveNavLink>
                         <ResponsiveNavLink :href="route('groups.index')" :active="route().current('groups.*')">
-                            Groupes
+                            Mes groupes
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink :href="route('feedback.create')" :active="route().current('feedback.*')">
+                            Feedback
                         </ResponsiveNavLink>
                     </div>
 

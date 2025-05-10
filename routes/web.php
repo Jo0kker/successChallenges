@@ -9,6 +9,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ChallengeController;
 use App\Http\Controllers\SeasonController;
 use App\Http\Controllers\GroupMemberController;
+use App\Http\Controllers\FeedbackController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -20,7 +21,10 @@ Route::get('/', function () {
         'laravelVersion' => Application::VERSION,
         'phpVersion' => PHP_VERSION,
     ]);
-});
+})->name('welcome');
+
+Route::get('/feedback', [FeedbackController::class, 'create'])->name('feedback.create');
+Route::post('/feedback', [FeedbackController::class, 'store'])->name('feedback.store');
 
 Route::middleware([
     'auth:sanctum',

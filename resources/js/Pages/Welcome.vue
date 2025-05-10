@@ -120,44 +120,22 @@ function handleImageError() {
                 </div>
             </div>
 
-            <!-- CTA Section -->
-            <div class="flex justify-center mt-16">
-                <div v-if="!auth.user" class="flex flex-col w-full px-4 space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4 sm:w-auto sm:px-0">
-                    <Link
-                        :href="route('login')"
-                        class="inline-flex items-center justify-center w-full px-6 py-3 text-base font-medium text-white border border-transparent rounded-md sm:w-auto bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-                    >
-                        Connexion
-                    </Link>
-                    <Link
-                        v-if="canRegister"
-                        :href="route('register')"
-                        class="inline-flex items-center justify-center w-full px-6 py-3 text-base font-medium text-white border border-transparent rounded-md sm:w-auto bg-secondary-600 hover:bg-secondary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary-500"
-                    >
-                        Inscription
-                    </Link>
-                </div>
-                <div v-else class="flex flex-col w-full px-4 space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4 sm:w-auto sm:px-0">
-                    <Link
-                        :href="route('dashboard')"
-                        class="inline-flex items-center justify-center w-full px-6 py-3 text-base font-medium text-white border border-transparent rounded-md sm:w-auto bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-                    >
-                        Tableau de bord
-                    </Link>
-                    <Link
-                        :href="route('groups.index')"
-                        class="inline-flex items-center justify-center w-full px-6 py-3 text-base font-medium text-white border border-transparent rounded-md sm:w-auto bg-secondary-600 hover:bg-secondary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary-500"
-                    >
-                        Mes groupes
-                    </Link>
-                </div>
-            </div>
-
             <!-- Footer -->
             <div class="flex justify-center mt-16">
                 <p class="text-sm text-gray-600 dark:text-gray-400">
                     © 2025 Dofus Success Challenge - Tous droits réservés
                 </p>
+            </div>
+
+            <div v-if="canLogin" class="z-10 p-6 text-right sm:fixed sm:top-0 sm:right-0">
+                <Link v-if="$page.props.auth.user" :href="route('dashboard')" class="font-semibold text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white focus:outline focus:outline-2 focus:rounded-sm focus:outline-red-500">Tableau de bord</Link>
+
+                <template v-else>
+                    <Link :href="route('login')" class="font-semibold text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white focus:outline focus:outline-2 focus:rounded-sm focus:outline-red-500">Se connecter</Link>
+
+                    <Link v-if="canRegister" :href="route('register')" class="ml-4 font-semibold text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white focus:outline focus:outline-2 focus:rounded-sm focus:outline-red-500">S'inscrire</Link>
+                    <Link :href="route('feedback.create')" class="ml-4 font-semibold text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white focus:outline focus:outline-2 focus:rounded-sm focus:outline-red-500">Feedback</Link>
+                </template>
             </div>
         </div>
     </div>
