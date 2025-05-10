@@ -184,29 +184,29 @@ const deleteGroup = () => {
 
     <AppLayout>
         <template #header>
-            <div class="flex items-center justify-between">
+            <div class="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:items-center sm:justify-between">
                 <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">
                     {{ group.name }}
                 </h2>
-                <div class="flex space-x-4">
+                <div class="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-4">
                     <Link
                         v-if="group.owner.id === $page.props.auth.user.id"
                         :href="route('groups.edit', group.id)"
-                        class="inline-flex items-center px-4 py-2 text-xs font-semibold tracking-widest text-white uppercase transition duration-150 ease-in-out bg-gray-600 border border-transparent rounded-md hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                        class="inline-flex items-center justify-center w-full px-4 py-2 text-xs font-semibold tracking-widest text-white uppercase transition duration-150 ease-in-out bg-gray-600 border border-transparent rounded-md sm:w-auto hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
                     >
                         Modifier le groupe
                     </Link>
                     <button
                         v-if="group.owner.id === $page.props.auth.user.id"
                         @click="deleteGroup"
-                        class="inline-flex items-center px-4 py-2 text-xs font-semibold tracking-widest text-white uppercase transition duration-150 ease-in-out bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:bg-red-700 active:bg-red-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                        class="inline-flex items-center justify-center w-full px-4 py-2 text-xs font-semibold tracking-widest text-white uppercase transition duration-150 ease-in-out bg-red-600 border border-transparent rounded-md sm:w-auto hover:bg-red-700 focus:bg-red-700 active:bg-red-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
                     >
                         Supprimer le groupe
                     </button>
                     <Link
                         v-if="canManage"
                         :href="route('seasons.create', group.id)"
-                        class="inline-flex items-center px-4 py-2 text-xs font-semibold tracking-widest text-white uppercase transition duration-150 ease-in-out bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                        class="inline-flex items-center justify-center w-full px-4 py-2 text-xs font-semibold tracking-widest text-white uppercase transition duration-150 ease-in-out bg-indigo-600 border border-transparent rounded-md sm:w-auto hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                     >
                         Créer une saison
                     </Link>
@@ -290,7 +290,7 @@ const deleteGroup = () => {
 
                         <div v-else-if="activeTab === 'members'">
                             <div v-if="canManageMembers || group.members.find(m => m.id === $page.props.auth.user.id && m.pivot.role === 'moderator')" class="mb-6">
-                                <div class="flex items-center space-x-4">
+                                <div class="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4">
                                     <div class="relative flex-1" style="position: relative; z-index: 50;">
                                         <input
                                             type="text"
@@ -319,10 +319,10 @@ const deleteGroup = () => {
                                             </ul>
                                         </div>
                                     </div>
-                                    <div>
+                                    <div class="w-full sm:w-auto">
                                         <select
                                             v-model="memberForm.role"
-                                            class="text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
+                                            class="w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
                                         >
                                             <option value="member">Membre</option>
                                             <option value="moderator">Modérateur</option>
@@ -331,7 +331,7 @@ const deleteGroup = () => {
                                     <button
                                         @click.prevent="addMember"
                                         :disabled="!searchQuery && !selectedUser"
-                                        class="inline-flex items-center px-4 py-2 text-xs font-semibold tracking-widest text-white uppercase transition duration-150 ease-in-out bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50"
+                                        class="inline-flex items-center justify-center w-full px-4 py-2 text-xs font-semibold tracking-widest text-white uppercase transition duration-150 ease-in-out bg-indigo-600 border border-transparent rounded-md sm:w-auto hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50"
                                     >
                                         {{ selectedUser ? 'Ajouter l\'utilisateur' : 'Ajouter l\'invité' }}
                                     </button>
@@ -339,11 +339,11 @@ const deleteGroup = () => {
                             </div>
 
                             <div class="space-y-4">
-                                <div v-for="member in members" :key="member.id" class="flex items-center justify-between p-4 bg-gray-700 rounded-lg">
+                                <div v-for="member in members" :key="member.id" class="flex flex-col justify-between p-4 space-y-2 bg-gray-700 rounded-lg sm:flex-row sm:items-center sm:space-y-0">
                                     <div class="flex items-center">
                                         <p class="text-sm font-medium text-gray-100">{{ member.name }}</p>
                                     </div>
-                                    <div class="flex items-center space-x-4">
+                                    <div class="flex flex-col items-start space-y-2 sm:flex-row sm:items-center sm:space-y-0 sm:space-x-4">
                                         <span class="px-2 py-1 text-xs font-semibold rounded-full"
                                             :class="{
                                                 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200': member.role === 'owner',
@@ -353,12 +353,12 @@ const deleteGroup = () => {
                                         >
                                             {{ member.role === 'owner' ? 'Propriétaire' : member.role === 'moderator' ? 'Modérateur' : 'Membre' }}
                                         </span>
-                                        <div v-if="canManageMembers && member.role !== 'owner'" class="flex items-center space-x-4">
+                                        <div v-if="canManageMembers && member.role !== 'owner'" class="flex flex-col items-start space-y-2 sm:flex-row sm:items-center sm:space-y-0 sm:space-x-4">
                                             <select
                                                 :value="member.role || 'member'"
                                                 v-if="member.type === 'user'"
                                                 @change="updateMemberRole(member.id, $event.target.value)"
-                                                class="text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
+                                                class="w-full text-sm border-gray-300 rounded-md shadow-sm sm:w-auto focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
                                             >
                                                 <option value="member">Membre</option>
                                                 <option value="moderator">Modérateur</option>
