@@ -7,6 +7,7 @@ use Spatie\Sitemap\SitemapGenerator;
 use Spatie\Sitemap\Tags\Url;
 use App\Models\Group;
 use App\Models\Season;
+use Illuminate\Support\Facades\File;
 
 class GenerateSitemap extends Command
 {
@@ -16,6 +17,13 @@ class GenerateSitemap extends Command
     public function handle()
     {
         $this->info('Génération du sitemap...');
+
+        // Supprimer l'ancien sitemap s'il existe
+        $sitemapPath = public_path('sitemap.xml');
+        if (File::exists($sitemapPath)) {
+            File::delete($sitemapPath);
+            $this->info('Ancien sitemap supprimé.');
+        }
 
         $sitemap = SitemapGenerator::create(config('app.url'))
             ->hasCrawled(function (Url $url) {
@@ -46,7 +54,7 @@ class GenerateSitemap extends Command
             });
         });
 
-        $sitemap->writeToFile(public_path('sitemap.xml'));
+        $sitemap->writeToFile($sitemapPath);
 
         $this->info('Sitemap généré avec succès !');
     }
