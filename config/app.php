@@ -52,7 +52,19 @@ return [
     |
     */
 
-    'url' => env('APP_URL', 'http://localhost'),
+    'url' => env('APP_URL', default: 'https://dofus-challenges.fr'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Sitemap URL
+    |--------------------------------------------------------------------------
+    |
+    | This URL is used specifically for generating the sitemap. It should be set
+    | to your production URL regardless of the current environment.
+    |
+    */
+
+    'sitemap_url' => env('SITEMAP_URL', env('APP_URL', 'http://localhost')),
 
     /*
     |--------------------------------------------------------------------------

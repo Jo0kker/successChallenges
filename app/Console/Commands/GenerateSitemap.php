@@ -25,10 +25,12 @@ class GenerateSitemap extends Command
             $this->info('Ancien sitemap supprimé.');
         }
 
-        $sitemap = SitemapGenerator::create(config('app.url'))
+        // Utiliser l'URL de production pour le sitemap
+        $sitemapUrl = config('app.sitemap_url', config('app.url'));
+        $sitemap = SitemapGenerator::create($sitemapUrl)
             ->hasCrawled(function (Url $url) {
                 if ($url->segment(1) === '') {
-                    return $url->setChangeFrequency(Url::CHANGE_FREQUENCY_DAILY)
+                    return $url->setChangeFrequency(changeFrequency: Url::CHANGE_FREQUENCY_DAILY)
                         ->setPriority(1.0);
                 }
                 return $url->setChangeFrequency(Url::CHANGE_FREQUENCY_WEEKLY)
