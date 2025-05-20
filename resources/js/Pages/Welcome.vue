@@ -1,7 +1,6 @@
 <script setup>
-import { Head, Link } from '@inertiajs/vue3';
-import ApplicationLogo from "@/Components/ApplicationLogo.vue";
-import ApplicationMark from '@/Components/ApplicationMark.vue';
+import { Link } from '@inertiajs/vue3';
+import SeoHead from '@/Components/SeoHead.vue';
 
 defineProps({
     canLogin: {
@@ -33,18 +32,10 @@ function handleImageError() {
 </script>
 
 <template>
-    <Head>
-        <title>Dofus Success Challenge - Défis de succès entre amis</title>
-        <meta name="description" content="Créez et partagez des défis de succès Dofus avec vos amis. Suivez vos progrès, célébrez vos victoires et relevez de nouveaux challenges !" />
-        <meta name="keywords" content="Dofus, succès, défis, challenge, jeu, MMORPG, Ankama" />
-        <meta property="og:title" content="Dofus Success Challenge - Défis de succès entre amis" />
-        <meta property="og:description" content="Créez et partagez des défis de succès Dofus avec vos amis. Suivez vos progrès, célébrez vos victoires et relevez de nouveaux challenges !" />
-        <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://dofus-success-challenge.com" />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Dofus Success Challenge" />
-        <meta name="twitter:description" content="Créez et partagez des défis de succès Dofus avec vos amis" />
-    </Head>
+    <SeoHead
+        title="Dofus Success Challenge - Défis de succès entre amis"
+        description="Créez et partagez des défis de succès Dofus avec vos amis. Suivez vos progrès, célébrez vos victoires et relevez de nouveaux challenges !"
+    />
 
     <div class="relative flex justify-center min-h-screen bg-gray-100 items-top dark:bg-gray-900 sm:items-center sm:pt-0">
         <div class="max-w-6xl mx-auto sm:px-6 lg:px-8">
@@ -74,7 +65,7 @@ function handleImageError() {
             <div class="mt-16">
                 <div class="relative max-w-3xl mx-auto">
                     <!-- Ligne de progression verticale -->
-                    <div class="absolute top-0 bottom-0 w-2 rounded-full left-[1.75rem] bg-gradient-to-b from-primary-500 via-secondary-500 to-green-500 sm:left-[1.75rem] left-[1.25rem]"></div>
+                    <div class="absolute top-0 bottom-0 w-2 rounded-full left-[1.75rem] bg-gradient-to-b from-primary-500 via-secondary-500 to-green-500 sm:left-[1.75rem]"></div>
 
                     <!-- Étapes -->
                     <div class="relative space-y-8 sm:space-y-16">
@@ -140,14 +131,3 @@ function handleImageError() {
         </div>
     </div>
 </template>
-
-<style>
-.bg-dots-darker {
-    background-image: url("data:image/svg+xml,%3Csvg width='30' height='30' viewBox='0 0 30 30' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1.22676 0C1.91374 0 2.45351 0.539773 2.45351 1.22676C2.45351 1.91374 1.91374 2.45351 1.22676 2.45351C0.539773 2.45351 0 1.91374 0 1.22676C0 0.539773 0.539773 0 1.22676 0Z' fill='rgba(0,0,0,0.07)'/%3E%3C/svg%3E");
-}
-@media (prefers-color-scheme: dark) {
-    .dark\:bg-dots-lighter {
-        background-image: url("data:image/svg+xml,%3Csvg width='30' height='30' viewBox='0 0 30 30' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1.22676 0C1.91374 0 2.45351 0.539773 2.45351 1.22676C2.45351 1.91374 1.91374 2.45351 1.22676 2.45351C0.539773 2.45351 0 1.91374 0 1.22676C0 0.539773 0.539773 0 1.22676 0Z' fill='rgba(255,255,255,0.07)'/%3E%3C/svg%3E");
-    }
-}
-</style>

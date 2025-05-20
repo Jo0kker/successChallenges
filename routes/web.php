@@ -10,6 +10,10 @@ use App\Http\Controllers\ChallengeController;
 use App\Http\Controllers\SeasonController;
 use App\Http\Controllers\GroupMemberController;
 use App\Http\Controllers\FeedbackController;
+use App\Http\Middleware\CanonicalDomain;
+
+// Apply CanonicalDomain middleware to all routes
+Route::middleware([CanonicalDomain::class])->group(function () {
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -64,4 +68,5 @@ Route::middleware([
         Route::get('groups/{group}/seasons/{season}/members/{member}/challenges', [ChallengeController::class, 'index'])->name('challenges.member');
         Route::post('groups/{group}/seasons/{season}/challenges/{challenge}/mark-failed', [ChallengeController::class, 'markAsFailed'])->name('challenges.mark-failed');
     });
+});
 });
